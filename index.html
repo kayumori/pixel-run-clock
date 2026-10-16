@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLUS R · Pixel Run Clock</title>
+<link rel="preload" href="assets/hood-run-hands-v5.png" as="image">
+<script>
+// テーマの決定順は 前回スイッチで選んだ設定 → ?theme= → ライト。
+// 描画前に確定させてチラつきを防ぐ
+(function(){
+  var t;
+  try{t=localStorage.getItem('plusr-run-theme')}catch(x){}
+  if(t!=='dark'&&t!=='light'){
+    try{var p=new URLSearchParams(location.search).get('theme');if(p==='dark'||p==='light')t=p}catch(x){}
+  }
+  document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  /* 埋め込み枠の地色。iframeの既定は白なので、Notionのページ色に合わせて必ず塗る */
+  --page:#fff;
+  --frame:#e3e4e7;
+  --card:#fff;
+  /* 上下が沈んで中央が持ち上がる盤面。内側の影とセットで奥行きを出す */
+  --card-bg:linear-gradient(180deg,#f1f2f5 0%,#fff 30%,#fff 60%,#eff1f4 100%);
+  --card-inset:inset 0 1px 2px rgba(16,24,40,.055),inset 0 -1px 2px rgba(16,24,40,.04);
+  --notch:#fefefe; /* 数字パネルの軸の切り欠き。パネルの高さ位置＝盤面の白い帯に合わせる */
+  --line:#eaebed;
+  --line-hover:#d0d0d0;
+  --text:#161616;
+  --label:#b5b5b5;
+  --date:#a8a8a8;
+  --placeholder:#c9c9c9;
+  /* 数字パネル：上半分の上→下、下半分の上→下 */
+  --t1:#2c2c31;
+  --t2:#171719;
+  --t3:#1b1b1e;
+  --t4:#0d0d0f;
+  --digit-text:#fafafa;
+  --colon:#171717;
+  --sw:#c7c7c7;
+}
+html[data-theme="dark"]{
+  --page:#191919; /* Notionダークのページ背景と同じ色 */
+  --frame:#333;
+  --card:#1c1c1e;
+  /* 暗い面では明るいほど手前に見えるので、中央を持ち上げて端を沈める */
+  --card-bg:linear-gradient(180deg,#151517 0%,#1f1f22 30%,#1f1f22 60%,#141416 100%);
+  --card-inset:inset 0 1px 2px rgba(0,0,0,.55),inset 0 -1px 2px rgba(0,0,0,.45);
+  --notch:#1f1f22;
+  --line:#333;
+  --line-hover:#4a4a4a;
+  --text:#f2f2f2;
+  --label:#6f6f6f;
+  --date:#7d7d7d;
+  --placeholder:#555;
+  --t1:#53535d;
+  --t2:#37373f;
+  --t3:#3b3b43;
+  --t4:#26262b;
+  --digit-text:#fafafa;
+  --colon:#e8e8e8;
+  --sw:#616166;
+}
+
+html,body{height:100%}
+html{background:var(--page)}
+body{
+  background:var(--page);
+  color:var(--text);
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding:10px;
+  display:flex;
+}
+
+/* 外枠 */
+.b{
+  flex:1;
+  min-height:110px;
+  display:flex;
+  align-items:center;
+  position:relative;
+  background:var(--card-bg);
+  box-shadow:var(--card-inset);
+  border:1px solid var(--frame);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+/* 左右を分ける縦線（外枠の内側に収める） */
+#vline{
+  position:absolute;
+  top:16px;
+  bottom:16px;
+  width:1px;
+  background:var(--line);
+  z-index:1;
+  pointer-events:none;
+  transition:background .15s
+}
+#vline.on{background:var(--line-hover)}
+
+.left{flex:0 0 44%;height:100%;min-width:0;display:flex;align-items:center;justify-content:center;padding:0 8px;overflow:hidden}
+.ckw{display:flex;flex-direction:column;align-items:flex-start}
+.ck{display:flex;align-items:center;gap:9px}
+
+/* ===== フリップ数字 ===== */
+/* 上半分・下半分の2枚構造。切り替わりは上の板が倒れ、続けて下の板が起き上がる */
+.dg{
+  position:relative;flex:none;
+  perspective:340px;
+  font-family:"Arial Black",Arial,sans-serif;font-weight:800;
+  color:var(--digit-text);
+}
+.hf{position:absolute;left:0;right:0;height:50%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.hf i{
+  position:absolute;left:0;right:0;height:200%;
+  display:flex;align-items:center;justify-content:center;
+  font-style:normal;line-height:1;
+  text-shadow:0 2px 4px rgba(0,0,0,.4)
+}
+/* 左右の暗がりで円筒っぽい丸みを出す */
+.up{
+  top:0;border-radius:8px 8px 2px 2px;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.3) 0,rgba(0,0,0,0) 13%,rgba(0,0,0,0) 87%,rgba(0,0,0,.3) 100%),
+    linear-gradient(180deg,var(--t1) 0%,var(--t2) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14)
+}
+.up i{top:0}
+.up:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(0,0,0,.6)}
+.lo{
+  bottom:0;border-radius:2px 2px 8px 8px;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.3) 0,rgba(0,0,0,0) 13%,rgba(0,0,0,0) 87%,rgba(0,0,0,.3) 100%),
+    linear-gradient(180deg,var(--t3) 0%,var(--t4) 100%);
+  box-shadow:0 6px 12px -5px rgba(0,0,0,.4),inset 0 -1px 0 rgba(255,255,255,.05)
+}
+.lo i{bottom:0}
+.lo:after{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:rgba(255,255,255,.07)}
+
+/* 回転軸の切り欠き */
+.dg:before,.dg:after{content:"";position:absolute;top:50%;margin-top:-4px;width:3px;height:8px;background:var(--notch);z-index:6;pointer-events:none}
+.dg:before{left:-1px;border-radius:0 3px 3px 0}
+.dg:after{right:-1px;border-radius:3px 0 0 3px}
+
+/* 倒れていく上の板 */
+.fa{z-index:3;transform-origin:50% 100%;animation:fa .3s cubic-bezier(.4,.02,.72,.15) forwards}
+@keyframes fa{from{transform:rotateX(0)}to{transform:rotateX(-90deg)}}
+/* 続けて起き上がる下の板 */
+.fb{z-index:4;transform-origin:50% 0;transform:rotateX(90deg);animation:fb .3s cubic-bezier(.24,.86,.44,1) .3s forwards}
+@keyframes fb{from{transform:rotateX(90deg)}to{transform:rotateX(0)}}
+/* めくれ具合に合わせて面の陰を動かす */
+.sh{position:absolute;left:0;right:0;top:0;bottom:0;background:#000;pointer-events:none;z-index:2}
+.fa .sh{opacity:0;animation:sa .3s linear forwards}
+@keyframes sa{from{opacity:0}to{opacity:.55}}
+.fb .sh{opacity:.55;animation:sb .3s linear .3s forwards}
+@keyframes sb{from{opacity:.55}to{opacity:0}}
+
+.co{font-family:"Arial Black",Arial,sans-serif;font-size:48px;font-weight:800;color:var(--colon);padding:0 1px 4px;flex:none}
+.dt{margin-top:8px;font-family:Menlo,Consolas,monospace;font-size:13px;letter-spacing:.18em;color:var(--date);font-weight:600;white-space:nowrap}
+
+/* 幅を変えるつまみ */
+.dv{flex:none;width:16px;height:100%;position:relative;cursor:col-resize;touch-action:none;user-select:none;z-index:2}
+
+.right{flex:1;height:100%;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:0 16px;overflow:hidden}
+.gl{font-size:9.5px;letter-spacing:.3em;color:var(--label);font-weight:600;margin-bottom:6px}
+/* テーマ切り替えスイッチ（右下） */
+.tg{
+  position:absolute;right:11px;bottom:9px;z-index:7;
+  width:30px;height:17px;padding:0;
+  border:1px solid var(--sw);border-radius:9px;background:transparent;
+  cursor:pointer;opacity:.4;
+  -webkit-appearance:none;appearance:none;
+  transition:opacity .18s
+}
+.tg:hover,.tg:focus-visible{opacity:1}
+.tg:focus-visible{outline:2px solid var(--line-hover);outline-offset:2px}
+.tg i{
+  position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;
+  background:var(--sw);
+  transition:transform .22s cubic-bezier(.3,.9,.4,1)
+}
+html[data-theme="dark"] .tg i{transform:translateX(13px)}
+@media(prefers-reduced-motion:reduce){.tg i{transition:none}}
+
+@media(max-width:640px){
+  body{padding:8px}
+  .b{border-radius:12px}
+  .gl{font-size:8.5px}
+  .right{padding:0 12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .fa,.fb,.fa .sh,.fb .sh{animation:none}
+}
+
+.right{padding:20px 24px 27px;max-width:none}
+.track{position:relative;height:clamp(40px,calc(100dvh - 98px),96px);flex:none;overflow:hidden;color:var(--text)}
+.runner{position:absolute;left:0;bottom:1px;width:auto;height:50%;aspect-ratio:1;will-change:transform}
+canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.ground{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--line)}
+.cloud{position:absolute;width:25px;height:5px;background:var(--line);top:12px}
+.cloud:before{content:'';position:absolute;width:12px;height:5px;left:5px;top:-5px;background:var(--line)}
+.cloud-one{animation:cloud-drift 36s linear -8s infinite}
+.cloud-two{top:22px;transform:scale(.7);animation:cloud-drift 52s linear -29s infinite}
+@keyframes cloud-drift{from{left:100%}to{left:-30px}}
+@media(prefers-reduced-motion:reduce){.cloud{animation:none}.cloud-one{left:22%}.cloud-two{left:72%}}
+@media(max-width:440px){.right{padding:14px 10px 26px}.track{height:clamp(40px,calc(100dvh - 98px),96px)}.dt{letter-spacing:.08em}}
+</style>
+</head>
+<body>
+<div class="b" id="b">
+  <div id="vline"></div>
+  <div class="left" id="left">
+    <div class="ckw">
+      <div class="ck">
+        <div class="dg" data-v="0"><div class="hf up"><i>0</i></div><div class="hf lo"><i>0</i></div></div>
+        <div class="dg" data-v="0"><div class="hf up"><i>0</i></div><div class="hf lo"><i>0</i></div></div>
+        <div class="co">:</div>
+        <div class="dg" data-v="0"><div class="hf up"><i>0</i></div><div class="hf lo"><i>0</i></div></div>
+        <div class="dg" data-v="0"><div class="hf up"><i>0</i></div><div class="hf lo"><i>0</i></div></div>
+      </div>
+      <div class="dt" id="dt"></div>
+    </div>
+  </div>
+  <div class="dv" id="dv"></div>
+  <div class="right">
+    <div class="track" id="track" role="img" aria-label="キャラクターが60秒で左から右へ走ります">
+      <div class="cloud cloud-one"></div><div class="cloud cloud-two"></div>
+      <div class="runner" id="runner"><canvas id="sprite" width="96" height="96" aria-hidden="true"></canvas></div>
+      <div class="ground"></div>
+    </div>
+  </div>
+  <button class="tg" id="tg" type="button" role="switch" aria-checked="false" aria-label="ライト・ダークの切り替え"><i></i></button>
+</div>
+
+<script>
+(function(){
+var bn=document.getElementById('b'),
+    lp=document.getElementById('left'),
+    dv=document.getElementById('dv'),
+    vl=document.getElementById('vline'),
+    dt=document.getElementById('dt'),
+    tg=document.getElementById('tg'),
+    root=document.documentElement,
+    dgs=document.querySelectorAll('.dg'),
+    co=document.querySelector('.co'),
+    reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// 縦線を、つまみの中心（外枠の内側基準）に置く
+function placeLine(){
+  var r=dv.getBoundingClientRect(),b=bn.getBoundingClientRect();
+  vl.style.left=(r.left-b.left+r.width/2-0.5)+'px';
+}
+
+// 外枠のサイズに合わせて数字とフォントを拡縮する
+function sc(){
+  var w=lp.clientWidth,h=bn.clientHeight;
+  var dw=Math.round(Math.max(12,Math.min(88,(w-40)/4.8,(h-34)/1.31)));
+  var dh=Math.round(dw*1.14),fs=Math.round(dw*0.64);
+  for(var i=0;i<dgs.length;i++){
+    dgs[i].style.width=dw+'px';
+    dgs[i].style.height=dh+'px';
+    dgs[i].style.fontSize=fs+'px';
+    dgs[i].style.perspective=Math.round(dh*5)+'px'; // 大きくしても倒れ方が歪まないよう高さに比例させる
+  }
+  document.querySelector('.ck').style.gap=Math.max(3,Math.min(9,w*.018))+'px';
+  if(co)co.style.fontSize=Math.round(dw*0.55)+'px';
+  if(dt)dt.style.fontSize=Math.max(9,Math.round(dw*0.17))+'px';
+  placeLine();
+
+}
+
+// 上の板が倒れ、続けて下の板が起き上がる
+function setDigit(el,v){
+  if(el.dataset.v===v)return;
+  var old=el.dataset.v;
+  el.dataset.v=v;
+  var up=el.querySelector('.up>i'),lo=el.querySelector('.lo>i');
+  if(reduce){up.textContent=v;lo.textContent=v;return}
+
+  up.textContent=v; // 倒れる板の下から新しい数字が現れる
+
+  var fa=document.createElement('div');
+  fa.className='hf up fa';
+  fa.innerHTML='<i>'+old+'</i><span class="sh"></span>';
+  var fb=document.createElement('div');
+  fb.className='hf lo fb';
+  fb.innerHTML='<i>'+v+'</i><span class="sh"></span>';
+  el.appendChild(fa);el.appendChild(fb);
+
+  var done=false;
+  var finish=function(){
+    if(done)return;
+    done=true;
+    lo.textContent=v;
+    if(fa.parentNode)fa.parentNode.removeChild(fa);
+    if(fb.parentNode)fb.parentNode.removeChild(fb);
+  };
+  fb.addEventListener('animationend',finish);
+  setTimeout(finish,900); // アニメが走らなかったときの保険
+}
+
+function tk(){
+  var n=new Date(),c=('0'+n.getHours()).slice(-2)+('0'+n.getMinutes()).slice(-2);
+  for(var j=0;j<4;j++)setDigit(dgs[j],c[j]);
+  if(dt){
+    var W=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    var tx=(n.getMonth()+1)+'.'+n.getDate()+' '+W[n.getDay()];
+    if(dt.textContent!==tx)dt.textContent=tx;
+  }
+}
+
+// 保存してある左右比を戻す
+try{var sp=localStorage.getItem('plusr-run-split');if(sp)lp.style.flexBasis=sp+'%'}catch(x){}
+
+// テーマ切り替え。選んだ結果は次に開いたときも残す
+function markTheme(){
+  var dark=root.getAttribute('data-theme')==='dark';
+  tg.setAttribute('aria-checked',dark?'true':'false');
+  tg.title=dark?'ライトモードにする':'ダークモードにする';
+  tg.setAttribute('aria-label',tg.title);
+}
+markTheme();
+tg.addEventListener('click',function(){
+  var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',next);
+  markTheme();
+  try{localStorage.setItem('plusr-run-theme',next)}catch(x){}
+});
+
+dv.addEventListener('pointerenter',function(){vl.classList.add('on')});
+dv.addEventListener('pointerleave',function(){if(!dv.dataset.drag)vl.classList.remove('on')});
+dv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  dv.dataset.drag='1';
+  vl.classList.add('on');
+  var cur=parseFloat(lp.style.flexBasis)||44;
+  var mv=function(ev){
+    var r=bn.getBoundingClientRect();
+    cur=Math.max(15,Math.min(80,(ev.clientX-r.left)/r.width*100));
+    lp.style.flexBasis=cur+'%';
+    sc();
+  };
+  var up=function(){
+    delete dv.dataset.drag;
+    vl.classList.remove('on');
+    try{localStorage.setItem('plusr-run-split',Math.round(cur*10)/10)}catch(x){}
+    document.removeEventListener('pointermove',mv);
+    document.removeEventListener('pointerup',up);
+  };
+  document.addEventListener('pointermove',mv);
+  document.addEventListener('pointerup',up);
+});
+
+// Approved original hooded scout, eight pixel sprite frames.
+var canvas=document.getElementById('sprite'),ctx=canvas.getContext('2d');
+var runner=document.getElementById('runner'),track=document.getElementById('track');
+var motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+var atlas=new Image(),ready=false,lastFrame=-1;
+ctx.imageSmoothingEnabled=false;
+atlas.onload=function(){ready=true;lastFrame=-1};
+atlas.src='assets/hood-run-hands-v5.png';
+function draw(frame){
+ ctx.clearRect(0,0,96,96);
+ ctx.drawImage(atlas,frame*96,0,96,96,0,0,96,96);
+}
+function animate(){
+ var now=new Date(),sec=now.getSeconds(),fraction=(sec+now.getMilliseconds()/1000)/60;
+ var frame=motion.matches?0:Math.floor(performance.now()/100)%8;
+ if(ready&&frame!==lastFrame){draw(frame);lastFrame=frame}
+ var p=motion.matches?sec/60:fraction;
+ // Both endpoints sit fully outside the clipped track, so the wrap is invisible.
+ var size=runner.clientWidth;
+ var x=-size+(track.clientWidth+size)*p;
+ runner.style.transform='translateX('+x+'px)';
+ requestAnimationFrame(animate);
+}
+animate();
+
+tk();sc();
+setInterval(tk,250);
+window.addEventListener('resize',sc);
+})();
+</script>
+</body>
+</html>
