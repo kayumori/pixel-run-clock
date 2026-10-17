@@ -234,6 +234,21 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
 @keyframes town-drift{from{background-position-x:0}to{background-position-x:calc(-1 * var(--town-tile))}}
 @keyframes mountain-drift{from{background-position-x:0}to{background-position-x:calc(-1 * var(--mountain-tile))}}
 @media(prefers-reduced-motion:reduce){.townscape,.mountains{animation:none}}
+/* The scenery follows local time; the clock's light/dark switch stays independent. */
+.sky{position:absolute;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(180deg,var(--sky-top,#101010),var(--sky-horizon,#303030) 85%,var(--sky-horizon,#303030))}
+.stars{position:absolute;inset:0;z-index:-1;opacity:var(--stars,1);pointer-events:none}
+.stars i{position:absolute;width:2px;height:2px;background:#ddd}
+.stars i:nth-child(3n){width:3px;height:3px;background:#aaa}
+.celestial{position:absolute;width:clamp(14px,8%,30px);height:auto;aspect-ratio:1;z-index:1;pointer-events:none;transform:translate(-50%,-50%);image-rendering:pixelated}
+.sun{left:var(--sun-x,50%);top:var(--sun-y,20%);opacity:var(--sun,0);color:var(--sun-tone,#fff)}
+.sun path{stroke:#aaa;stroke-width:.6}
+.moon{left:var(--moon-x,50%);top:var(--moon-y,20%);opacity:var(--moon,1);color:#dedede}
+.track[data-period="midnight"] .townscape,.track[data-period="night"] .townscape,.track[data-period="dawn"] .townscape,.track[data-period="evening"] .townscape{filter:brightness(.9) contrast(.7);opacity:.65}
+.track[data-period="midnight"] .mountains,.track[data-period="night"] .mountains{filter:brightness(.7);opacity:.27}
+.track[data-period="midnight"] .cloud,.track[data-period="night"] .cloud{opacity:.25}
+.track[data-period="dawn"] .mountains,.track[data-period="evening"] .mountains{filter:none;opacity:.25}
+.sky,.stars,.celestial{transition:opacity 3s linear,color 3s linear}
+@media(prefers-reduced-motion:reduce){.sky,.stars,.celestial{transition:none}}
 </style>
 </head>
 <body>
@@ -253,6 +268,10 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
   <div class="dv" id="dv"></div>
   <div class="right">
     <div class="track" id="track" role="img" aria-label="キャラクターが60秒で左から右へ走ります">
+      <div class="sky" aria-hidden="true"></div>
+      <div class="stars" aria-hidden="true"><i style="left:12%;top:14%"></i><i style="left:27%;top:32%"></i><i style="left:37%;top:9%"></i><i style="left:49%;top:23%"></i><i style="left:63%;top:12%"></i><i style="left:76%;top:30%"></i><i style="left:88%;top:16%"></i><i style="left:19%;top:44%"></i><i style="left:58%;top:39%"></i><i style="left:83%;top:47%"></i></div>
+      <svg class="celestial sun" viewBox="0 0 20 20" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 3h6v2h2v2h2v6h-2v2h-2v2H7v-2H5v-2H3V7h2V5h2z"/></svg>
+      <svg class="celestial moon" viewBox="0 0 20 20" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M8 2h5v2h-3v2H8v6h2v2h3v2h4v-3h2v4h-3v2H8v-2H4v-3H2V8h2V4h4z"/></svg>
       <div class="mountains" aria-hidden="true"></div>
       <div class="cloud cloud-one" aria-hidden="true"></div><div class="cloud cloud-two" aria-hidden="true"></div>
       <div class="townscape" aria-hidden="true"></div>
@@ -263,6 +282,41 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
   <button class="tg" id="tg" type="button" role="switch" aria-checked="false" aria-label="ライト・ダークの切り替え"><i></i></button>
 </div>
 
+<script id="daylight">
+(function(){
+  var scene=document.getElementById('track');
+  // Local civil time, with continuous interpolation across midnight.
+  var stops=[
+    [0,12,30,1,0,1],[4,12,30,1,0,1],[5,48,150,.25,.25,.35],
+    [7,196,240,0,1,0],[12,230,250,0,1,0],
+    [17,88,184,0,1,0],[20,20,52,.75,0,1],[24,12,30,1,0,1]
+  ];
+  function skyAt(hour){
+    var a=stops[0],b=stops[1];
+    for(var i=1;i<stops.length;i++){if(hour<=stops[i][0]){a=stops[i-1];b=stops[i];break;}}
+    var p=(hour-a[0])/(b[0]-a[0]),values=[];
+    for(var j=1;j<a.length;j++)values.push(a[j]+(b[j]-a[j])*p);
+    return values;
+  }
+  function updateSky(){
+    var now=new Date(),h=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600,v=skyAt(h);
+    var period=h<5?'midnight':h<7?'dawn':h<11?'morning':h<16?'day':h<19?'evening':'night';
+    var labels={midnight:'深夜',dawn:'朝焼け',morning:'朝',day:'昼',evening:'夕方',night:'夜'};
+    function gray(n){n=Math.round(n);return 'rgb('+n+','+n+','+n+')';}
+    scene.dataset.period=period;
+    scene.setAttribute('aria-label',labels[period]+'の街並み。キャラクターが60秒で左から右へ走ります');
+    var day=Math.max(0,Math.min(1,(h-5)/14)),night=((h+6)%24)/12;
+    var vars={'--sky-top':gray(v[0]),'--sky-horizon':gray(v[1]),'--stars':v[2],'--sun':v[3],'--moon':v[4],
+      '--sun-x':(12+day*76)+'%','--sun-y':(75-Math.sin(day*Math.PI)*60)+'%',
+      '--moon-x':(12+Math.min(1,night)*76)+'%','--moon-y':(70-Math.sin(Math.min(1,night)*Math.PI)*54)+'%',
+      '--sun-tone':gray(h>=7&&h<16?252:240)};
+    for(var key in vars)scene.style.setProperty(key,vars[key]);
+  }
+  updateSky();
+  setInterval(updateSky,30000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)updateSky();});
+})();
+</script>
 <script>
 (function(){
 var bn=document.getElementById('b'),
