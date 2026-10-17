@@ -248,6 +248,13 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
 .track[data-period="midnight"] .cloud,.track[data-period="night"] .cloud{opacity:.25}
 .track[data-period="dawn"] .mountains,.track[data-period="evening"] .mountains{filter:none;opacity:.25}
 .sky,.stars,.celestial{transition:opacity 3s linear,color 3s linear}
+/* A night scene never turns the light theme into a dark panel. */
+html[data-theme="light"] .sky{background:linear-gradient(180deg,var(--light-sky-top,#eee),var(--light-sky-horizon,#fafafa) 85%,var(--light-sky-horizon,#fafafa))}
+html[data-theme="light"] .moon{color:#858585}
+html[data-theme="light"] .stars i{background:#858585}
+html[data-theme="light"] .stars i:nth-child(3n){background:#aaa}
+html[data-theme="light"] .track .townscape{filter:none;opacity:.4}
+html[data-theme="light"] .track .mountains{filter:none;opacity:.16}
 @media(prefers-reduced-motion:reduce){.sky,.stars,.celestial{transition:none}}
 </style>
 </head>
@@ -306,7 +313,9 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
     scene.dataset.period=period;
     scene.setAttribute('aria-label',labels[period]+'の街並み。キャラクターが60秒で左から右へ走ります');
     var day=Math.max(0,Math.min(1,(h-5)/14)),night=((h+6)%24)/12;
-    var vars={'--sky-top':gray(v[0]),'--sky-horizon':gray(v[1]),'--stars':v[2],'--sun':v[3],'--moon':v[4],
+    var vars={'--sky-top':gray(v[0]),'--sky-horizon':gray(v[1]),
+      '--light-sky-top':gray(220+v[0]/255*30),'--light-sky-horizon':gray(235+v[1]/255*20),
+      '--stars':v[2],'--sun':v[3],'--moon':v[4],
       '--sun-x':(12+day*76)+'%','--sun-y':(75-Math.sin(day*Math.PI)*60)+'%',
       '--moon-x':(12+Math.min(1,night)*76)+'%','--moon-y':(70-Math.sin(Math.min(1,night)*Math.PI)*54)+'%',
       '--sun-tone':gray(h>=7&&h<16?252:240)};
