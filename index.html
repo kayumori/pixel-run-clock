@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PLUS R · Pixel Run Clock</title>
 <link rel="preload" href="assets/hood-run-hands-v5.png" as="image">
-<link rel="preload" href="assets/townscape-v2.png" as="image">
+<link rel="preload" href="assets/townscape-v3.png" as="image">
 <link rel="preload" href="assets/mountains-v1.png" as="image">
 <script>
 // テーマの決定順は 前回スイッチで選んだ設定 → ?theme= → ライト。
@@ -214,11 +214,11 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 @media(prefers-reduced-motion:reduce){.cloud{animation:none}.cloud-one{left:22%}.cloud-two{left:72%}}
 @media(max-width:440px){.right{padding:6px 10px 8px}.dt{letter-spacing:.08em}}
 
-/* Two different town districts, with a slower mountain layer behind them. */
-.track{isolation:isolate;--town-tile:768px;--mountain-tile:384px}
+/* Six different town districts, with a slower mountain layer behind them. */
+.track{isolation:isolate;--town-tile:2304px;--mountain-tile:384px}
 .mountains,.townscape{position:absolute;left:0;right:0;bottom:4px;pointer-events:none;background-repeat:repeat-x;background-position:0 100%;image-rendering:pixelated}
 .mountains{top:0;z-index:0;background-image:url("assets/mountains-v1.png");background-size:var(--mountain-tile) 100%;opacity:.16;animation:mountain-drift 180s linear -24s infinite}
-.townscape{height:72%;max-height:240px;z-index:2;background-image:url("assets/townscape-v2.png");background-size:var(--town-tile) 100%;opacity:.4;animation:town-drift 96s linear -17s infinite}
+.townscape{height:72%;max-height:240px;z-index:2;background-image:url("assets/townscape-v3.png");background-size:var(--town-tile) 100%;opacity:.4;animation:town-drift 288s linear -17s infinite}
 html[data-theme="dark"] .mountains{filter:invert(1);opacity:.17}
 html[data-theme="dark"] .townscape{filter:invert(1);opacity:.28}
 .cloud{z-index:1;pointer-events:none}
@@ -297,7 +297,7 @@ function sc(){
   // Keep each landscape tile in proportion to the actual available scene height.
   var scene=document.getElementById('track'),town=document.querySelector('.townscape');
   if(scene&&town){
-    scene.style.setProperty('--town-tile',Math.round(town.clientHeight*6)+'px');
+    scene.style.setProperty('--town-tile',Math.round(town.clientHeight*18)+'px');
     scene.style.setProperty('--mountain-tile',Math.round((scene.clientHeight-4)*3)+'px');
   }
 

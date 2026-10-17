@@ -25,3 +25,5 @@ GitHubの Settings → Pages → Deploy from a branch で `main` / `/ (root)` �
 - `index.html`: ウィジェット本体
 - `assets/hood-run-hands-v5.png`: 完成版の8コマ・モノクロ走行素材
 - `.nojekyll`: Jekyll処理を省略
+
+街並みは6地区・約36種類の建物で構成。市場・郊外に、港町・職人街・学術街・住宅街を追加し、288秒で一周します。
