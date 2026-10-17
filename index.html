@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PLUS R · Pixel Run Clock</title>
 <link rel="preload" href="assets/hood-run-hands-v5.png" as="image">
-<link rel="preload" href="assets/townscape-v1.png" as="image">
+<link rel="preload" href="assets/townscape-v2.png" as="image">
+<link rel="preload" href="assets/mountains-v1.png" as="image">
 <script>
 // テーマの決定順は 前回スイッチで選んだ設定 → ?theme= → ライト。
 // 描画前に確定させてチラつきを防ぐ
@@ -200,9 +201,9 @@ html[data-theme="dark"] .tg i{transform:translateX(13px)}
   .fa,.fb,.fa .sh,.fb .sh{animation:none}
 }
 
-.right{padding:20px 24px 27px;max-width:none}
-.track{position:relative;height:clamp(40px,calc(100dvh - 98px),96px);flex:none;overflow:hidden;color:var(--text)}
-.runner{position:absolute;left:0;bottom:1px;width:auto;height:50%;aspect-ratio:1;will-change:transform}
+.right{padding:8px 18px 10px;max-width:none}
+.track{position:relative;height:100%;min-height:0;flex:1;overflow:hidden;color:var(--text)}
+.runner{position:absolute;left:0;bottom:1px;width:auto;height:clamp(20px,calc(50dvh - 49px),48px);aspect-ratio:1;will-change:transform}
 canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 .ground{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--line)}
 .cloud{position:absolute;width:25px;height:5px;background:var(--line);top:12px}
@@ -211,17 +212,23 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 .cloud-two{top:22px;transform:scale(.7);animation:cloud-drift 52s linear -29s infinite}
 @keyframes cloud-drift{from{left:100%}to{left:-30px}}
 @media(prefers-reduced-motion:reduce){.cloud{animation:none}.cloud-one{left:22%}.cloud-two{left:72%}}
-@media(max-width:440px){.right{padding:14px 10px 26px}.track{height:clamp(40px,calc(100dvh - 98px),96px)}.dt{letter-spacing:.08em}}
+@media(max-width:440px){.right{padding:6px 10px 8px}.dt{letter-spacing:.08em}}
 
-/* Distant town: a 384 × 128 pixel tile behind the approved character. */
-.track{isolation:isolate;--town-tile:clamp(108px,calc(300dvh - 306px),276px)}
-.townscape{position:absolute;inset:0 0 4px;z-index:1;pointer-events:none;background-image:url("assets/townscape-v1.png");background-repeat:repeat-x;background-position:0 100%;background-size:var(--town-tile) 100%;image-rendering:pixelated;opacity:.38;animation:town-drift 96s linear -17s infinite}
+/* Two different town districts, with a slower mountain layer behind them. */
+.track{isolation:isolate;--town-tile:768px;--mountain-tile:384px}
+.mountains,.townscape{position:absolute;left:0;right:0;bottom:4px;pointer-events:none;background-repeat:repeat-x;background-position:0 100%;image-rendering:pixelated}
+.mountains{top:0;z-index:0;background-image:url("assets/mountains-v1.png");background-size:var(--mountain-tile) 100%;opacity:.16;animation:mountain-drift 180s linear -24s infinite}
+.townscape{height:72%;max-height:240px;z-index:2;background-image:url("assets/townscape-v2.png");background-size:var(--town-tile) 100%;opacity:.4;animation:town-drift 96s linear -17s infinite}
+html[data-theme="dark"] .mountains{filter:invert(1);opacity:.17}
 html[data-theme="dark"] .townscape{filter:invert(1);opacity:.28}
-.cloud{z-index:0;pointer-events:none}
+.cloud{z-index:1;pointer-events:none}
+.cloud-one{animation-duration:72s}
+.cloud-two{animation-duration:104s}
 .runner{z-index:3}
 .ground{z-index:4}
 @keyframes town-drift{from{background-position-x:0}to{background-position-x:calc(-1 * var(--town-tile))}}
-@media(prefers-reduced-motion:reduce){.townscape{animation:none}}
+@keyframes mountain-drift{from{background-position-x:0}to{background-position-x:calc(-1 * var(--mountain-tile))}}
+@media(prefers-reduced-motion:reduce){.townscape,.mountains{animation:none}}
 </style>
 </head>
 <body>
@@ -242,6 +249,7 @@ html[data-theme="dark"] .townscape{filter:invert(1);opacity:.28}
   <div class="dv" id="dv"></div>
   <div class="right">
     <div class="track" id="track" role="img" aria-label="キャラクターが60秒で左から右へ走ります">
+      <div class="mountains" aria-hidden="true"></div>
       <div class="cloud cloud-one" aria-hidden="true"></div><div class="cloud cloud-two" aria-hidden="true"></div>
       <div class="townscape" aria-hidden="true"></div>
       <div class="runner" id="runner"><canvas id="sprite" width="96" height="96" aria-hidden="true"></canvas></div>
@@ -285,6 +293,13 @@ function sc(){
   if(co)co.style.fontSize=Math.round(dw*0.55)+'px';
   if(dt)dt.style.fontSize=Math.max(9,Math.round(dw*0.17))+'px';
   placeLine();
+
+  // Keep each landscape tile in proportion to the actual available scene height.
+  var scene=document.getElementById('track'),town=document.querySelector('.townscape');
+  if(scene&&town){
+    scene.style.setProperty('--town-tile',Math.round(town.clientHeight*6)+'px');
+    scene.style.setProperty('--mountain-tile',Math.round((scene.clientHeight-4)*3)+'px');
+  }
 
 }
 
