@@ -237,22 +237,20 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
 /* The scenery follows local time; the clock's light/dark switch stays independent. */
 .sky{position:absolute;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(180deg,var(--sky-top,#101010),var(--sky-horizon,#303030) 85%,var(--sky-horizon,#303030))}
 .stars{position:absolute;inset:0;z-index:-1;opacity:var(--stars,1);pointer-events:none}
-.stars i{position:absolute;width:2px;height:2px;background:#ddd}
-.stars i:nth-child(3n){width:3px;height:3px;background:#aaa}
+.stars i{position:absolute;width:5px;height:5px;background:#aaa;clip-path:polygon(40% 0,60% 0,60% 40%,100% 40%,100% 60%,60% 60%,60% 100%,40% 100%,40% 60%,0 60%,0 40%,40% 40%)}
 .celestial{position:absolute;width:clamp(14px,8%,30px);height:auto;aspect-ratio:1;z-index:1;pointer-events:none;transform:translate(-50%,-50%);image-rendering:pixelated}
 .sun{left:var(--sun-x,50%);top:var(--sun-y,20%);opacity:var(--sun,0);color:var(--sun-tone,#fff)}
 .sun path{stroke:#aaa;stroke-width:.6}
-.moon{left:var(--moon-x,50%);top:var(--moon-y,20%);opacity:var(--moon,1);color:#dedede}
+.moon{width:clamp(10px,4%,16px);left:var(--moon-x,50%);top:var(--moon-y,20%);opacity:var(--moon,1);color:#dedede}
 .track[data-period="midnight"] .townscape,.track[data-period="night"] .townscape,.track[data-period="dawn"] .townscape,.track[data-period="evening"] .townscape{filter:brightness(.9) contrast(.7);opacity:.65}
 .track[data-period="midnight"] .mountains,.track[data-period="night"] .mountains{filter:brightness(.7);opacity:.27}
 .track[data-period="midnight"] .cloud,.track[data-period="night"] .cloud{opacity:.25}
 .track[data-period="dawn"] .mountains,.track[data-period="evening"] .mountains{filter:none;opacity:.25}
 .sky,.stars,.celestial{transition:opacity 3s linear,color 3s linear}
 /* A night scene never turns the light theme into a dark panel. */
-html[data-theme="light"] .sky{background:linear-gradient(180deg,var(--light-sky-top,#eee),var(--light-sky-horizon,#fafafa) 85%,var(--light-sky-horizon,#fafafa))}
-html[data-theme="light"] .moon{color:#858585}
-html[data-theme="light"] .stars i{background:#858585}
-html[data-theme="light"] .stars i:nth-child(3n){background:#aaa}
+html[data-theme="light"] .sky{background:none}
+html[data-theme="light"] .moon{color:#999}
+html[data-theme="light"] .stars i{background:#aaa}
 html[data-theme="light"] .track .townscape{filter:none;opacity:.4}
 html[data-theme="light"] .track .mountains{filter:none;opacity:.16}
 @media(prefers-reduced-motion:reduce){.sky,.stars,.celestial{transition:none}}
@@ -276,7 +274,7 @@ html[data-theme="light"] .track .mountains{filter:none;opacity:.16}
   <div class="right">
     <div class="track" id="track" role="img" aria-label="キャラクターが60秒で左から右へ走ります">
       <div class="sky" aria-hidden="true"></div>
-      <div class="stars" aria-hidden="true"><i style="left:12%;top:14%"></i><i style="left:27%;top:32%"></i><i style="left:37%;top:9%"></i><i style="left:49%;top:23%"></i><i style="left:63%;top:12%"></i><i style="left:76%;top:30%"></i><i style="left:88%;top:16%"></i><i style="left:19%;top:44%"></i><i style="left:58%;top:39%"></i><i style="left:83%;top:47%"></i></div>
+      <div class="stars" aria-hidden="true"><i style="left:14%;top:20%"></i><i style="left:37%;top:12%"></i><i style="left:64%;top:28%"></i><i style="left:86%;top:16%"></i></div>
       <svg class="celestial sun" viewBox="0 0 20 20" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 3h6v2h2v2h2v6h-2v2h-2v2H7v-2H5v-2H3V7h2V5h2z"/></svg>
       <svg class="celestial moon" viewBox="0 0 20 20" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M8 2h5v2h-3v2H8v6h2v2h3v2h4v-3h2v4h-3v2H8v-2H4v-3H2V8h2V4h4z"/></svg>
       <div class="mountains" aria-hidden="true"></div>
