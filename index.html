@@ -239,8 +239,8 @@ html[data-theme="dark"] .townscape{filter:brightness(.9) contrast(.7);opacity:.5
 .stars{position:absolute;inset:0;z-index:-1;opacity:var(--stars,1);pointer-events:none}
 .stars i{position:absolute;width:5px;height:5px;background:#aaa;clip-path:polygon(40% 0,60% 0,60% 40%,100% 40%,100% 60%,60% 60%,60% 100%,40% 100%,40% 60%,0 60%,0 40%,40% 40%)}
 .celestial{position:absolute;width:clamp(14px,8%,30px);height:auto;aspect-ratio:1;z-index:1;pointer-events:none;transform:translate(-50%,-50%);image-rendering:pixelated}
-.sun{width:clamp(12px,4%,18px);left:var(--sun-x,50%);top:var(--sun-y,20%);opacity:var(--sun,0);color:#aaa}
-html[data-theme="dark"] .sun{color:#c3c3c3}
+.sun{width:clamp(12px,3.5%,16px);left:var(--sun-x,50%);top:var(--sun-y,20%);opacity:var(--sun,0);color:#bcbcbc}
+html[data-theme="dark"] .sun{color:#c9c9c9}
 .moon{width:clamp(10px,4%,16px);left:var(--moon-x,50%);top:var(--moon-y,20%);opacity:var(--moon,1);color:#dedede}
 .track[data-period="midnight"] .townscape,.track[data-period="night"] .townscape,.track[data-period="dawn"] .townscape,.track[data-period="evening"] .townscape{filter:brightness(.9) contrast(.7);opacity:.65}
 .track[data-period="midnight"] .mountains,.track[data-period="night"] .mountains{filter:brightness(.7);opacity:.27}
@@ -275,7 +275,7 @@ html[data-theme="light"] .track .mountains{filter:none;opacity:.16}
     <div class="track" id="track" role="img" aria-label="キャラクターが60秒で左から右へ走ります">
       <div class="sky" aria-hidden="true"></div>
       <div class="stars" aria-hidden="true"><i style="left:14%;top:20%"></i><i style="left:37%;top:12%"></i><i style="left:64%;top:28%"></i><i style="left:86%;top:16%"></i></div>
-      <svg class="celestial sun" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" fill-rule="evenodd" d="M6 4h4v1h1v1h1v4h-1v1h-1v1H6v-1H5v-1H4V6h1V5h1z M6 6v4h4V6z"/><path fill="currentColor" d="M7 0h2v2H7z M7 14h2v2H7z M0 7h2v2H0z M14 7h2v2h-2z M2 2h1v1H2z M13 2h1v1h-1z M2 13h1v1H2z M13 13h1v1h-1z"/></svg>
+      <svg class="celestial sun" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M5 2h6v1h2v2h1v6h-1v2h-2v1H5v-1H3v-2H2V5h1V3h2z"/><path fill="#fff" opacity=".28" d="M5 3h5v1H6v1H4v3H3V5h1V4h1z"/><path fill="#777" opacity=".15" d="M13 8h1v3h-1v2h-2v1H6v-1h5v-1h1v-2h1z"/></svg>
       <svg class="celestial moon" viewBox="0 0 20 20" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M8 2h5v2h-3v2H8v6h2v2h3v2h4v-3h2v4h-3v2H8v-2H4v-3H2V8h2V4h4z"/></svg>
       <div class="mountains" aria-hidden="true"></div>
       <div class="cloud cloud-one" aria-hidden="true"></div><div class="cloud cloud-two" aria-hidden="true"></div>
